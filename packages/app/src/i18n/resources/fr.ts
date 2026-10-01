@@ -1142,6 +1142,7 @@ export const fr: TranslationResources = {
         branch: "Branche",
         project: "Projet",
         host: "Hôte",
+        agent: "Agent",
         changeRequest: "Pull request",
         checks: "Vérifications",
         services: "Services",

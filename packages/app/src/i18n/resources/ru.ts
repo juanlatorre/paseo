@@ -1124,6 +1124,7 @@ export const ru: TranslationResources = {
         branch: "Ветка",
         project: "Проект",
         host: "Хост",
+        agent: "Агент",
         changeRequest: "PR",
         checks: "Проверки",
         services: "Сервисы",

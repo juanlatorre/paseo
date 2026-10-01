@@ -4,6 +4,7 @@ import { deriveSidebarStateBucket } from "./sidebar-agent-state";
 
 export interface WorkspaceAgentActivity {
   agentId: string;
+  provider: Agent["provider"];
   status: WorkspaceDescriptor["status"];
   enteredAt: Date | null;
 }
@@ -41,6 +42,7 @@ export function buildWorkspaceAgentActivityIndex(
     });
     activityByWorkspaceId.set(agent.workspaceId, {
       agentId: agent.id,
+      provider: agent.provider,
       status,
       enteredAt,
     });
@@ -50,6 +52,7 @@ export function buildWorkspaceAgentActivityIndex(
     const previousActivity = previous?.get(workspaceId);
     if (
       previousActivity?.agentId === activity.agentId &&
+      previousActivity.provider === activity.provider &&
       previousActivity.status === activity.status
     ) {
       activityByWorkspaceId.set(workspaceId, previousActivity);

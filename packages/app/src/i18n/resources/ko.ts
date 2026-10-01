@@ -1114,6 +1114,7 @@ export const ko: TranslationResources = {
         branch: "브랜치",
         project: "프로젝트",
         host: "호스트",
+        agent: "에이전트",
         changeRequest: "풀 리퀘스트",
         checks: "검사",
         services: "서비스",

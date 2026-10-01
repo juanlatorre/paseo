@@ -57,6 +57,8 @@ export interface SidebarWorkspaceEntry extends SidebarStatusWorkspacePlacement {
   hasRunningScripts: boolean;
   /** Key of the workspace whose agent launched this one, or null when it stands on its own. */
   parentWorkspaceKey: string | null;
+  // Provider of the most recently active root agent, so the row can show which agent it runs.
+  agentProvider?: string | null;
 }
 
 export interface SidebarProjectEntry {
@@ -194,6 +196,7 @@ export function createSidebarWorkspaceEntry(input: {
     scripts: input.workspace.scripts,
     hasRunningScripts: input.workspace.scripts.some((script) => script.lifecycle === "running"),
     parentWorkspaceKey: resolveParentWorkspaceKey(input),
+    agentProvider: input.workspaceAgentActivity?.get(input.workspace.id)?.provider ?? null,
   };
 }
 

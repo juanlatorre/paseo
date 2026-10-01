@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { View, type PressableStateCallbackType } from "react-native";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import {
+  Bot,
   Captions,
   Circle,
   CircleCheck,
@@ -102,6 +103,7 @@ const ROW_ITEM_ICONS: Record<SidebarRowItem, OptionIcon> = {
   branch: withUnistyles(GitBranch),
   project: withUnistyles(Folder),
   host: withUnistyles(Server),
+  agent: withUnistyles(Bot),
   changeRequest: withUnistyles(GitPullRequest),
   services: withUnistyles(Globe),
   labels: withUnistyles(Tag),
@@ -138,6 +140,7 @@ const ROW_ITEM_LABEL_KEYS: Record<SidebarRowItem, string> = {
   branch: "sidebar.display.show.branch",
   project: "sidebar.display.show.project",
   host: "sidebar.display.show.host",
+  agent: "sidebar.display.show.agent",
   changeRequest: "sidebar.display.show.changeRequest",
   services: "sidebar.display.show.services",
   labels: "sidebar.display.show.labels",

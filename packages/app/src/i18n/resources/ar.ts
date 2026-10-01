@@ -1107,6 +1107,7 @@ export const ar: TranslationResources = {
         branch: "الفرع",
         project: "المشروع",
         host: "المضيف",
+        agent: "الوكيل",
         changeRequest: "طلب السحب",
         checks: "الفحوصات",
         services: "الخدمات",

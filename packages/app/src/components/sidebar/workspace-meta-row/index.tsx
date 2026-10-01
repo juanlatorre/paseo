@@ -9,6 +9,7 @@ import {
 } from "@getpaseo/protocol/workspace-labels";
 import type { HostBadgeModel } from "@/hosts/appearance";
 import { HostBadge, HOST_BADGE_ICON_SIZE } from "@/hosts/host-badge";
+import { getProviderIcon } from "@/components/provider-icons";
 import { WorkspaceLabelChip, WORKSPACE_LABEL_CHIP_INSET } from "@/workspace-labels/chip";
 import type { PrHint } from "@/git/pr-hint";
 import { getForgePresentation, normalizeForge } from "@/git/forge";
@@ -64,6 +65,7 @@ export function WorkspaceMetaRow({
   currentBranch,
   projectName,
   hostBadge,
+  agentProvider = null,
   prHint,
   serviceSummary,
   labels = EMPTY_LABELS,
@@ -71,6 +73,7 @@ export function WorkspaceMetaRow({
   currentBranch: string | null;
   projectName: string | null;
   hostBadge: HostBadgeModel | null;
+  agentProvider?: string | null;
   prHint: PrHint | null;
   serviceSummary: WorkspaceServiceSummary | null;
   labels?: readonly WorkspaceLabelDefinition[];
@@ -80,6 +83,7 @@ export function WorkspaceMetaRow({
     currentBranch,
     projectName,
     hasHostBadge: hostBadge !== null,
+    agentProvider,
     prHint,
     serviceSummary,
     labels,
@@ -120,6 +124,9 @@ function MetaItemNode({
   if (item.kind === "host") {
     return hostBadge ? <HostBadge badge={hostBadge} /> : null;
   }
+  if (item.kind === "agent") {
+    return <AgentItem provider={item.provider} />;
+  }
   if (item.kind === "changeRequest") {
     return <PullRequestItem hint={item.hint} />;
   }
@@ -142,6 +149,20 @@ function IdentityItem({ kind, name }: { kind: "branch" | "project"; name: string
       <Text style={styles.identityText} numberOfLines={1}>
         {name}
       </Text>
+    </View>
+  );
+}
+
+/**
+ * The provider of the workspace's most recently active agent, as its glyph alone — the name
+ * would repeat on every row what the glyph already says. The color is read off a StyleSheet
+ * object because the icon component is picked at runtime and cannot be wrapped ahead of time.
+ */
+function AgentItem({ provider }: { provider: string }) {
+  const Icon = getProviderIcon(provider);
+  return (
+    <View style={styles.identityIcon} testID="sidebar-workspace-agent">
+      <Icon size={META_ICON_SIZE} color={styles.agentIcon.color} />
     </View>
   );
 }
@@ -332,6 +353,9 @@ const styles = StyleSheet.create((theme) => ({
   },
   identityIcon: {
     flexShrink: 0,
+  },
+  agentIcon: {
+    color: theme.colors.foregroundMuted,
   },
   identityText: {
     color: theme.colors.foregroundMuted,

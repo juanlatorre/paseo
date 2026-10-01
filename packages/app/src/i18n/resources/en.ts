@@ -1115,6 +1115,7 @@ export const en = {
         branch: "Branch",
         project: "Project",
         host: "Host",
+        agent: "Agent",
         changeRequest: "Pull request",
         checks: "Checks",
         services: "Services",

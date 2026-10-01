@@ -186,6 +186,7 @@ const SidebarRowItemsSchema = z
     branch: z.boolean().catch(DEFAULT_SIDEBAR_ROW_ITEMS.branch),
     project: z.boolean().catch(DEFAULT_SIDEBAR_ROW_ITEMS.project),
     host: z.boolean().catch(DEFAULT_SIDEBAR_ROW_ITEMS.host),
+    agent: z.boolean().catch(DEFAULT_SIDEBAR_ROW_ITEMS.agent),
     changeRequest: z.boolean().catch(DEFAULT_SIDEBAR_ROW_ITEMS.changeRequest),
     services: z.boolean().optional().catch(undefined),
     labels: z.boolean().catch(DEFAULT_SIDEBAR_ROW_ITEMS.labels),

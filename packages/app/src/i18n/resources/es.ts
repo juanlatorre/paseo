@@ -1143,6 +1143,7 @@ export const es: TranslationResources = {
         branch: "Rama",
         project: "Proyecto",
         host: "Host",
+        agent: "Agente",
         changeRequest: "Pull request",
         checks: "Comprobaciones",
         services: "Servicios",

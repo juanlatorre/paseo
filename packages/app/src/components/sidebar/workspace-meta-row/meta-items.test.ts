@@ -48,6 +48,22 @@ describe("selectMetaRowItems", () => {
     ]);
   });
 
+  it("places the agent's provider right after the host", () => {
+    expect(kinds(select({ agentProvider: "claude" }))).toEqual([
+      "host",
+      "agent",
+      "changeRequest",
+      "checks",
+      "services",
+      "labels",
+    ]);
+  });
+
+  it("drops the agent when the row item is switched off", () => {
+    const visible = { ...DEFAULT_SIDEBAR_ROW_ITEMS, agent: false };
+    expect(kinds(select({ agentProvider: "claude", visible }))).not.toContain("agent");
+  });
+
   it("reads identity, then the change, then its state, then what is running, then labels", () => {
     expect(kinds(select())).toEqual(["host", "changeRequest", "checks", "services", "labels"]);
   });

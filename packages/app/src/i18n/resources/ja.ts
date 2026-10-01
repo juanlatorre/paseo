@@ -1120,6 +1120,7 @@ export const ja: TranslationResources = {
         branch: "ブランチ",
         project: "プロジェクト",
         host: "ホスト",
+        agent: "エージェント",
         changeRequest: "プルリクエスト",
         checks: "チェック",
         services: "サービス",

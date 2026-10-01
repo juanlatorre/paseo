@@ -1133,6 +1133,7 @@ export const ptBR: TranslationResources = {
         branch: "Branch",
         project: "Projeto",
         host: "Host",
+        agent: "Agente",
         changeRequest: "Pull request",
         checks: "Verificações",
         services: "Serviços",

@@ -167,6 +167,7 @@ export const SidebarWorkspaceRowContent = memo(function SidebarWorkspaceRowConte
             currentBranch={workspace.currentBranch}
             projectName={leadingProjectName}
             hostBadge={hostBadge ?? null}
+            agentProvider={workspace.agentProvider}
             prHint={workspace.prHint}
             serviceSummary={serviceSummary}
             labels={labels}

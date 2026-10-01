@@ -19,6 +19,7 @@ export type MetaRowItem =
   | { kind: "branch"; name: string }
   | { kind: "project"; name: string }
   | { kind: "host" }
+  | { kind: "agent"; provider: string }
   | { kind: "changeRequest"; hint: PrHint }
   | { kind: "checks"; summary: CheckSummary; label: boolean }
   | { kind: "services"; summary: WorkspaceServiceSummary }
@@ -38,6 +39,7 @@ export function selectMetaRowItems(input: {
   currentBranch: string | null;
   projectName: string | null;
   hasHostBadge: boolean;
+  agentProvider?: string | null;
   prHint: PrHint | null;
   serviceSummary: WorkspaceServiceSummary | null;
   labels: readonly WorkspaceLabelDefinition[];
@@ -48,6 +50,7 @@ export function selectMetaRowItems(input: {
     currentBranch,
     projectName,
     hasHostBadge,
+    agentProvider,
     prHint,
     serviceSummary,
     labels,
@@ -64,6 +67,9 @@ export function selectMetaRowItems(input: {
   }
   if (hasHostBadge) {
     items.push({ kind: "host" });
+  }
+  if (agentProvider && visible.agent) {
+    items.push({ kind: "agent", provider: agentProvider });
   }
   if (prHint && visible.changeRequest) {
     items.push({ kind: "changeRequest", hint: prHint });
