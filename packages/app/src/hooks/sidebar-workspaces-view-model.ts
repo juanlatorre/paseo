@@ -11,7 +11,10 @@ import { projectDisplayNameFromProjectId } from "@/utils/project-display-name";
 import { aggregateSidebarStateBuckets } from "@/utils/sidebar-agent-state";
 import { shortenPath } from "@/utils/shorten-path";
 import type { WorkspaceAgentActivity } from "@/utils/workspace-agent-activity";
-import { resolveWorkspaceMapKeyByIdentity } from "@/utils/workspace-identity";
+import {
+  normalizeWorkspaceOpaqueId,
+  resolveWorkspaceMapKeyByIdentity,
+} from "@/utils/workspace-identity";
 
 const EMPTY_PROJECTS: SidebarProjectEntry[] = [];
 
@@ -52,6 +55,8 @@ export interface SidebarWorkspaceEntry extends SidebarStatusWorkspacePlacement {
   archiveUnpushedCommitCount: number | null;
   scripts: WorkspaceDescriptor["scripts"];
   hasRunningScripts: boolean;
+  /** Key of the workspace whose agent launched this one, or null when it stands on its own. */
+  parentWorkspaceKey: string | null;
 }
 
 export interface SidebarProjectEntry {
@@ -73,12 +78,16 @@ export interface SidebarWorkspaceSession {
   serverId: string;
   workspaces: Map<string, WorkspaceDescriptor>;
   workspaceAgentActivity: Map<string, WorkspaceAgentActivity>;
+  workspaceParentIds: ReadonlyMap<string, string>;
 }
 
 interface SidebarWorkspaceSessionSource {
   workspaces: Map<string, WorkspaceDescriptor>;
   workspaceAgentActivity: Map<string, WorkspaceAgentActivity>;
+  workspaceParentIds?: ReadonlyMap<string, string>;
 }
+
+const EMPTY_WORKSPACE_PARENT_IDS: ReadonlyMap<string, string> = new Map();
 
 export function selectSidebarWorkspaceSessions(
   sessions: Record<string, SidebarWorkspaceSessionSource | undefined>,
@@ -94,6 +103,7 @@ export function selectSidebarWorkspaceSessions(
       serverId,
       workspaces: session.workspaces,
       workspaceAgentActivity: session.workspaceAgentActivity,
+      workspaceParentIds: session.workspaceParentIds ?? EMPTY_WORKSPACE_PARENT_IDS,
     });
   }
   return selected;
@@ -114,7 +124,8 @@ export function areSidebarWorkspaceSessionsEqual(
       !rightSession ||
       leftSession.serverId !== rightSession.serverId ||
       leftSession.workspaces !== rightSession.workspaces ||
-      leftSession.workspaceAgentActivity !== rightSession.workspaceAgentActivity
+      leftSession.workspaceAgentActivity !== rightSession.workspaceAgentActivity ||
+      leftSession.workspaceParentIds !== rightSession.workspaceParentIds
     ) {
       return false;
     }
@@ -149,6 +160,7 @@ export function createSidebarWorkspaceEntry(input: {
   projectViewKey?: string;
   pendingCreateAttempts?: Record<string, PendingCreateAttempt>;
   workspaceAgentActivity?: ReadonlyMap<string, WorkspaceAgentActivity>;
+  workspaceParentIds?: ReadonlyMap<string, string>;
 }): SidebarWorkspaceEntry {
   const projectViewKey = input.projectViewKey ?? input.workspace.projectId;
   const effectiveStatus = deriveEffectiveWorkspaceStatus(input);
@@ -181,10 +193,21 @@ export function createSidebarWorkspaceEntry(input: {
     archiveUnpushedCommitCount: input.workspace.gitRuntime?.aheadOfOrigin ?? null,
     scripts: input.workspace.scripts,
     hasRunningScripts: input.workspace.scripts.some((script) => script.lifecycle === "running"),
+    parentWorkspaceKey: resolveParentWorkspaceKey(input),
   };
 }
 
 const EMPTY_WORKSPACE_LABELS: string[] = [];
+
+function resolveParentWorkspaceKey(input: {
+  serverId: string;
+  workspace: WorkspaceDescriptor;
+  workspaceParentIds?: ReadonlyMap<string, string>;
+}): string | null {
+  const workspaceId = normalizeWorkspaceOpaqueId(input.workspace.id);
+  const parentWorkspaceId = workspaceId ? input.workspaceParentIds?.get(workspaceId) : undefined;
+  return parentWorkspaceId ? `${input.serverId}:${parentWorkspaceId}` : null;
+}
 
 function deriveEffectiveWorkspaceStatus(input: {
   serverId: string;
@@ -391,6 +414,7 @@ export function buildSidebarWorkspaceEntries(input: {
       projectViewKey: placement.projectViewKey,
       pendingCreateAttempts: input.pendingCreateAttempts,
       workspaceAgentActivity: session.workspaceAgentActivity,
+      workspaceParentIds: session.workspaceParentIds,
     });
     const previousEntry = input.previousEntries?.get(placement.workspaceKey);
     entries.set(

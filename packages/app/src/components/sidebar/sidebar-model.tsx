@@ -19,6 +19,7 @@ import { buildSidebarProjection } from "./sidebar-projection";
 import type { SidebarProjectIconTarget } from "@/utils/sidebar-project-row-model";
 import { filterWorkspacesByLabels, type SidebarWorkspaceGroup } from "./sidebar-labels";
 import { filterWorkspacesByProjects, resolveActiveProjectFilters } from "./sidebar-project-filter";
+import type { SidebarWorkspaceFamilies } from "./sidebar-workspace-families";
 import {
   hasAuthoritativeWorkspaceLabelCatalog,
   useWorkspaceLabelProjection,
@@ -43,6 +44,7 @@ interface SidebarModel extends SidebarWorkspacesListResult {
   collapsedProjectKeys: ReadonlySet<string>;
   toggleProjectCollapsed: (projectViewKey: string) => void;
   shortcutModel: SidebarShortcutModel;
+  families: SidebarWorkspaceFamilies;
 }
 
 const SidebarModelContext = createContext<SidebarModel | null>(null);
@@ -67,6 +69,9 @@ export function SidebarModelProvider({
     (state) => state.collapsedWorkspaceGroupKeys,
   );
   const pinnedCollapsed = useSidebarCollapsedSectionsStore((state) => state.collapsedPinned);
+  const expandedWorkspaceFamilyKeys = useSidebarCollapsedSectionsStore(
+    (state) => state.expandedWorkspaceFamilyKeys,
+  );
   const pinnedWorkspaceOrder = useSidebarOrderStore((state) => state.pinnedWorkspaceOrder);
   const toggleProjectCollapsed = useSidebarCollapsedSectionsStore(
     (state) => state.toggleProjectCollapsed,
@@ -150,10 +155,12 @@ export function SidebarModelProvider({
       pinnedCollapsed,
       collapsedProjectKeys,
       collapsedWorkspaceGroupKeys,
+      expandedWorkspaceFamilyKeys,
     }),
     [
       collapsedProjectKeys,
       collapsedWorkspaceGroupKeys,
+      expandedWorkspaceFamilyKeys,
       groupMode,
       list.projectNamesByViewKey,
       filteredProjects,
@@ -179,6 +186,7 @@ export function SidebarModelProvider({
       collapsedProjectKeys,
       toggleProjectCollapsed,
       shortcutModel: projection.shortcutModel,
+      families: projection.families,
     }),
     [
       resolvedProjectFilters,

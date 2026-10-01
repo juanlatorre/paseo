@@ -37,6 +37,7 @@ function makeWorkspace(
     archiveUnpushedCommitCount: null,
     scripts: [],
     hasRunningScripts: false,
+    parentWorkspaceKey: null,
     labels,
   };
   return { placement, entry };
@@ -85,6 +86,7 @@ function projectionInput(options?: {
     pinnedCollapsed: options?.pinnedCollapsed ?? false,
     collapsedProjectKeys: new Set<string>(),
     collapsedWorkspaceGroupKeys: new Set<string>(),
+    expandedWorkspaceFamilyKeys: new Set<string>(),
   };
 }
 
@@ -172,5 +174,103 @@ describe("buildSidebarProjection", () => {
     expect(projection.shortcutModel.shortcutTargets).toEqual([
       { serverId: "srv", workspaceId: "unpinned" },
     ]);
+  });
+});
+
+function workspaceGroupNames(projection: ReturnType<typeof buildSidebarProjection>) {
+  return projection.workspaceGroups.map((group) => [group.key, group.rows.map((row) => row.name)]);
+}
+
+function projectWorkspaceIds(projection: ReturnType<typeof buildSidebarProjection>) {
+  return projection.pinnedGroups.unpinnedProjects.map((project) => [
+    project.viewKey,
+    project.workspaces.map((workspace) => workspace.workspaceId),
+  ]);
+}
+
+describe("buildSidebarProjection workspace families", () => {
+  function familyInput(options: {
+    groupMode: "project" | "status";
+    expanded?: boolean;
+    childStatus?: SidebarWorkspaceEntry["statusBucket"];
+    pinChild?: boolean;
+  }) {
+    const parent = makeWorkspace("plan", "running", [], "kore");
+    const child = makeWorkspace("insha-773", options.childStatus ?? "done", [], "kore");
+    const crossProjectChild = makeWorkspace("sira-web", "done", [], "sira-web");
+    child.entry.parentWorkspaceKey = parent.entry.workspaceKey;
+    crossProjectChild.entry.parentWorkspaceKey = parent.entry.workspaceKey;
+    const pinnedKeys = options.pinChild ? [child.entry.workspaceKey] : [];
+    return {
+      projects: [
+        makeProject([parent.placement, child.placement], "kore"),
+        makeProject([crossProjectChild.placement], "sira-web"),
+      ],
+      pinnedKeys: {
+        pinnedWorkspaceKeys: pinnedKeys,
+        pinnedAtByKey: Object.fromEntries(pinnedKeys.map((key) => [key, "2026-07-12T12:00:00Z"])),
+      },
+      pinnedWorkspaceOrder: [],
+      workspaceEntriesByKey: new Map(
+        [parent, child, crossProjectChild].map(({ entry }) => [entry.workspaceKey, entry]),
+      ),
+      projectNamesByViewKey: new Map([
+        ["kore", "kore"],
+        ["sira-web", "sira-web"],
+      ]),
+      groupMode: options.groupMode,
+      pinnedCollapsed: false,
+      collapsedProjectKeys: new Set<string>(),
+      collapsedWorkspaceGroupKeys: new Set<string>(),
+      expandedWorkspaceFamilyKeys: new Set(options.expanded ? [parent.entry.workspaceKey] : []),
+    };
+  }
+
+  it("folds child workspaces under their parent in status mode", () => {
+    const projection = buildSidebarProjection(familyInput({ groupMode: "status" }));
+
+    expect(workspaceGroupNames(projection)).toEqual([["running", ["plan"]]]);
+    expect(
+      projection.families.childrenByParentKey.get("srv:plan")?.map((child) => child.name),
+    ).toEqual(["insha-773", "sira-web"]);
+  });
+
+  it("lifts the parent into the most urgent status among its children", () => {
+    const projection = buildSidebarProjection(
+      familyInput({ groupMode: "status", childStatus: "needs_input" }),
+    );
+
+    expect(projection.workspaceGroups.map((group) => group.key)).toEqual(["needs_input"]);
+  });
+
+  it("moves a child out of its own project in project mode", () => {
+    const projection = buildSidebarProjection(familyInput({ groupMode: "project" }));
+
+    expect(projectWorkspaceIds(projection)).toEqual([
+      ["kore", ["plan"]],
+      ["sira-web", []],
+    ]);
+  });
+
+  it("counts children in keyboard shortcuts only while the family is expanded", () => {
+    const shortcutKeys = (expanded: boolean) => [
+      ...buildSidebarProjection(
+        familyInput({ groupMode: "status", expanded }),
+      ).shortcutModel.shortcutIndexByWorkspaceKey.keys(),
+    ];
+
+    expect(shortcutKeys(false)).toEqual(["srv:plan"]);
+    expect(shortcutKeys(true)).toEqual(["srv:plan", "srv:insha-773", "srv:sira-web"]);
+  });
+
+  it("leaves a pinned child pinned", () => {
+    const projection = buildSidebarProjection(familyInput({ groupMode: "status", pinChild: true }));
+
+    expect(projection.pinnedGroups.pinnedChats.map((workspace) => workspace.workspaceId)).toEqual([
+      "insha-773",
+    ]);
+    expect(
+      projection.families.childrenByParentKey.get("srv:plan")?.map((child) => child.name),
+    ).toEqual(["sira-web"]);
   });
 });

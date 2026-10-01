@@ -54,7 +54,7 @@ Accepting new work after an ambiguous interruption would create a split-brain se
 
 Agents can launch other agents via the agent-scoped `create_agent` MCP tool. Agent-scoped creation is always asynchronous and always stamps `paseo.parent-agent-id`, pointing back at the caller. Omit `workspaceId` to use the caller's workspace, or pass an existing workspace ID returned by `create_workspace`. Placement never changes parentage.
 
-- **Subagents** — exist as part of the creating agent's work, appear in that agent's subagent track, and are archived with it.
+- **Subagents** — exist as part of the creating agent's work, appear in that agent's subagent track, and are archived with it A subagent placed in its own workspace also folds that workspace under its parent's sidebar row, unless the user started an agent there too or pinned it (`packages/app/src/utils/workspace-parent-index.ts`).
 - **Detached agents** — stand on their own after an explicit detach transition, do not appear in the former parent's subagent track, and are not archived with it.
 
 Parent archive detaches a subagent instead of archiving it when either condition holds:

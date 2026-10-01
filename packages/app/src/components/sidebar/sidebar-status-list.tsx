@@ -78,6 +78,11 @@ import { SidebarGroupToggleRow } from "@/components/sidebar/sidebar-group-toggle
 import { useLimitedSidebarGroup } from "@/components/sidebar/use-limited-sidebar-group";
 import type { ToggleSidebarWorkspacePin } from "@/hooks/use-sidebar-workspace-pin";
 import { DraggableList, type DraggableRenderItemInfo } from "@/components/draggable-list";
+import {
+  getSidebarWorkspaceChildren,
+  type SidebarWorkspaceFamilies,
+} from "@/components/sidebar/sidebar-workspace-families";
+import { SidebarWorkspaceFamily } from "@/components/sidebar/sidebar-workspace-family";
 import type { DraggableListDragHandleProps } from "@/components/draggable-list.types";
 import { useLongPressDragInteraction } from "@/components/sidebar/use-long-press-drag-interaction";
 
@@ -115,6 +120,7 @@ function statusWorkspaceKeyExtractor(workspace: SidebarWorkspaceEntry): string {
 interface StatusWorkspaceListProps {
   groups: SidebarWorkspaceGroup[];
   pinnedWorkspaces: SidebarWorkspaceEntry[];
+  families: SidebarWorkspaceFamilies;
   projectIconByProjectViewKey: ReadonlyMap<string, string | null>;
   shortcutIndexByWorkspaceKey: Map<string, number>;
   showShortcutBadges: boolean;
@@ -133,6 +139,7 @@ interface StatusWorkspaceListProps {
 export function SidebarStatusWorkspaceList({
   groups,
   pinnedWorkspaces,
+  families,
   projectIconByProjectViewKey,
   shortcutIndexByWorkspaceKey,
   showShortcutBadges,
@@ -170,17 +177,15 @@ export function SidebarStatusWorkspaceList({
       isActive,
       dragHandleProps,
     }: DraggableRenderItemInfo<SidebarWorkspaceEntry>) => (
-      <StatusWorkspaceRow
+      <StatusWorkspaceFamilyRows
         workspace={workspace}
-        {...buildStatusRowProjectPresentation({
-          workspace,
-          projectIconByProjectViewKey,
-          hostBadgeByServerId,
-        })}
+        families={families}
         inStatusGroup={false}
-        shortcutNumber={statusShortcutIndex.get(workspace.workspaceKey) ?? null}
-        showShortcutBadge={showShortcutBadges}
-        canPin={supportsPinningByServerId.get(workspace.serverId) === true}
+        projectIconByProjectViewKey={projectIconByProjectViewKey}
+        hostBadgeByServerId={hostBadgeByServerId}
+        shortcutIndex={statusShortcutIndex}
+        showShortcutBadges={showShortcutBadges}
+        supportsPinningByServerId={supportsPinningByServerId}
         onToggleWorkspacePin={onToggleWorkspacePin}
         onWorkspacePress={onWorkspacePress}
         drag={drag}
@@ -189,6 +194,7 @@ export function SidebarStatusWorkspaceList({
       />
     ),
     [
+      families,
       hostBadgeByServerId,
       onToggleWorkspacePin,
       onWorkspacePress,
@@ -234,6 +240,7 @@ export function SidebarStatusWorkspaceList({
       ) : (
         <StatusGroupList
           groups={groups}
+          families={families}
           collapsedWorkspaceGroupKeys={collapsedWorkspaceGroupKeys}
           projectIconByProjectViewKey={projectIconByProjectViewKey}
           shortcutIndex={statusShortcutIndex}
@@ -274,6 +281,7 @@ export function SidebarStatusWorkspaceList({
 
 function StatusGroupList({
   groups,
+  families,
   collapsedWorkspaceGroupKeys,
   projectIconByProjectViewKey,
   shortcutIndex,
@@ -284,6 +292,7 @@ function StatusGroupList({
   onToggleWorkspacePin,
 }: {
   groups: SidebarWorkspaceGroup[];
+  families: SidebarWorkspaceFamilies;
   collapsedWorkspaceGroupKeys: ReadonlySet<string>;
   projectIconByProjectViewKey: ReadonlyMap<string, string | null>;
   shortcutIndex: Map<string, number>;
@@ -299,6 +308,7 @@ function StatusGroupList({
         <StatusGroupRows
           key={group.key}
           group={group}
+          families={families}
           collapsed={collapsedWorkspaceGroupKeys.has(group.key)}
           projectIconByProjectViewKey={projectIconByProjectViewKey}
           shortcutIndex={shortcutIndex}
@@ -315,6 +325,7 @@ function StatusGroupList({
 
 function StatusGroupRows({
   group,
+  families,
   collapsed,
   projectIconByProjectViewKey,
   shortcutIndex,
@@ -325,6 +336,7 @@ function StatusGroupRows({
   onToggleWorkspacePin,
 }: {
   group: SidebarWorkspaceGroup;
+  families: SidebarWorkspaceFamilies;
   collapsed: boolean;
   projectIconByProjectViewKey: ReadonlyMap<string, string | null>;
   shortcutIndex: Map<string, number>;
@@ -350,17 +362,16 @@ function StatusGroupRows({
           testID={`sidebar-status-group-rows-${group.key}`}
         >
           {visibleWorkspaces.map((workspace) => (
-            <StatusWorkspaceRow
+            <StatusWorkspaceFamilyRows
               key={workspace.workspaceKey}
               workspace={workspace}
-              {...buildStatusRowProjectPresentation({
-                workspace,
-                projectIconByProjectViewKey,
-                hostBadgeByServerId,
-              })}
-              shortcutNumber={shortcutIndex.get(workspace.workspaceKey) ?? null}
-              showShortcutBadge={showShortcutBadges}
-              canPin={supportsPinningByServerId.get(workspace.serverId) === true}
+              families={families}
+              inStatusGroup
+              projectIconByProjectViewKey={projectIconByProjectViewKey}
+              hostBadgeByServerId={hostBadgeByServerId}
+              shortcutIndex={shortcutIndex}
+              showShortcutBadges={showShortcutBadges}
+              supportsPinningByServerId={supportsPinningByServerId}
               onToggleWorkspacePin={onToggleWorkspacePin}
               onWorkspacePress={onWorkspacePress}
             />
@@ -375,6 +386,99 @@ function StatusGroupRows({
           ) : null}
         </View>
       ) : null}
+    </View>
+  );
+}
+
+/** A workspace row and, when its agent launched other workspaces, the family folded under it. */
+function StatusWorkspaceFamilyRows({
+  workspace,
+  families,
+  inStatusGroup,
+  projectIconByProjectViewKey,
+  hostBadgeByServerId,
+  shortcutIndex,
+  showShortcutBadges,
+  supportsPinningByServerId,
+  onToggleWorkspacePin,
+  onWorkspacePress,
+  drag,
+  isDragging,
+  dragHandleProps,
+}: {
+  workspace: SidebarWorkspaceEntry;
+  families: SidebarWorkspaceFamilies;
+  inStatusGroup: boolean;
+  projectIconByProjectViewKey: ReadonlyMap<string, string | null>;
+  hostBadgeByServerId: ReadonlyMap<string, HostBadgeModel>;
+  shortcutIndex: Map<string, number>;
+  showShortcutBadges: boolean;
+  supportsPinningByServerId: ReadonlyMap<string, boolean>;
+  onToggleWorkspacePin: ToggleSidebarWorkspacePin;
+  onWorkspacePress?: () => void;
+  drag?: () => void;
+  isDragging?: boolean;
+  dragHandleProps?: DraggableListDragHandleProps;
+}) {
+  const childWorkspaces = getSidebarWorkspaceChildren(families, workspace.workspaceKey);
+  const renderChild = useCallback(
+    (child: SidebarWorkspaceEntry) => (
+      <StatusWorkspaceRow
+        workspace={child}
+        {...buildStatusRowProjectPresentation({
+          workspace: child,
+          projectIconByProjectViewKey,
+          hostBadgeByServerId,
+        })}
+        // The family's guide line already indents the children.
+        inStatusGroup={false}
+        shortcutNumber={shortcutIndex.get(child.workspaceKey) ?? null}
+        showShortcutBadge={showShortcutBadges}
+        canPin={supportsPinningByServerId.get(child.serverId) === true}
+        onToggleWorkspacePin={onToggleWorkspacePin}
+        onWorkspacePress={onWorkspacePress}
+      />
+    ),
+    [
+      hostBadgeByServerId,
+      onToggleWorkspacePin,
+      onWorkspacePress,
+      projectIconByProjectViewKey,
+      shortcutIndex,
+      showShortcutBadges,
+      supportsPinningByServerId,
+    ],
+  );
+
+  const row = (
+    <StatusWorkspaceRow
+      workspace={workspace}
+      {...buildStatusRowProjectPresentation({
+        workspace,
+        projectIconByProjectViewKey,
+        hostBadgeByServerId,
+      })}
+      inStatusGroup={inStatusGroup}
+      shortcutNumber={shortcutIndex.get(workspace.workspaceKey) ?? null}
+      showShortcutBadge={showShortcutBadges}
+      canPin={supportsPinningByServerId.get(workspace.serverId) === true}
+      onToggleWorkspacePin={onToggleWorkspacePin}
+      onWorkspacePress={onWorkspacePress}
+      drag={drag}
+      isDragging={isDragging}
+      dragHandleProps={dragHandleProps}
+    />
+  );
+  if (childWorkspaces.length === 0) return row;
+  return (
+    <View>
+      {row}
+      <SidebarWorkspaceFamily
+        parentWorkspaceKey={workspace.workspaceKey}
+        childWorkspaces={childWorkspaces}
+        indented={inStatusGroup}
+        renderChild={renderChild}
+      />
     </View>
   );
 }

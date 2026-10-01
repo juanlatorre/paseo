@@ -40,6 +40,7 @@ import { useSidebarModel } from "@/components/sidebar/sidebar-model";
 import type { PinnedSidebarGroups } from "@/hooks/use-sidebar-pins";
 import { RetainedPanelActivity } from "@/components/retained-panel";
 import type { SidebarWorkspaceGroup } from "@/components/sidebar/sidebar-labels";
+import type { SidebarWorkspaceFamilies } from "@/components/sidebar/sidebar-workspace-families";
 import type { SidebarProjectIconTarget } from "@/utils/sidebar-project-row-model";
 import { type SidebarGroupMode, useSidebarViewStore } from "@/stores/sidebar-view-store";
 import { useHosts } from "@/runtime/host-runtime";
@@ -70,6 +71,7 @@ interface SidebarSharedProps {
   hasProjectsBeforeFilter: boolean;
   hasActiveProjectFilter: boolean;
   workspaceEntriesByKey: ReadonlyMap<string, SidebarWorkspaceEntry>;
+  families: SidebarWorkspaceFamilies;
   isInitialLoad: boolean;
   isRevalidating: boolean;
   isManualRefresh: boolean;
@@ -119,6 +121,7 @@ export const LeftSidebar = memo(function LeftSidebar({ active }: { active: boole
     hasProjectsBeforeFilter,
     resolvedProjectFilters,
     workspaceEntriesByKey,
+    families,
     isInitialLoad,
     isRevalidating,
     refreshAll,
@@ -213,6 +216,7 @@ export const LeftSidebar = memo(function LeftSidebar({ active }: { active: boole
     hasProjectsBeforeFilter,
     hasActiveProjectFilter: resolvedProjectFilters.length > 0,
     workspaceEntriesByKey,
+    families,
     isInitialLoad,
     isRevalidating,
     isManualRefresh,
@@ -501,6 +505,7 @@ function MobileSidebar({
   hasProjectsBeforeFilter,
   hasActiveProjectFilter,
   workspaceEntriesByKey,
+  families,
   isInitialLoad,
   isRevalidating,
   isManualRefresh,
@@ -583,6 +588,7 @@ function MobileSidebar({
             hasProjectsBeforeFilter={hasProjectsBeforeFilter}
             hasActiveProjectFilter={hasActiveProjectFilter}
             workspaceEntriesByKey={workspaceEntriesByKey}
+            families={families}
             isRefreshing={isManualRefresh && isRevalidating}
             onRefresh={handleRefresh}
             onWorkspacePress={handleWorkspacePress}
@@ -617,6 +623,7 @@ function DesktopSidebar({
   hasProjectsBeforeFilter,
   hasActiveProjectFilter,
   workspaceEntriesByKey,
+  families,
   isInitialLoad,
   isRevalidating,
   isManualRefresh,
@@ -761,6 +768,7 @@ function DesktopSidebar({
             hasProjectsBeforeFilter={hasProjectsBeforeFilter}
             hasActiveProjectFilter={hasActiveProjectFilter}
             workspaceEntriesByKey={workspaceEntriesByKey}
+            families={families}
             isRefreshing={isManualRefresh && isRevalidating}
             onRefresh={handleRefresh}
             onAddProject={handleOpenProject}

@@ -90,6 +90,11 @@ import { hasVisibleOrderChanged, mergeWithRemainder } from "@/utils/sidebar-reor
 import { confirmDialog } from "@/utils/confirm-dialog";
 import type { SidebarStateBucket } from "@/utils/sidebar-agent-state";
 import { SidebarStatusWorkspaceList } from "@/components/sidebar/sidebar-status-list";
+import {
+  getSidebarWorkspaceChildren,
+  type SidebarWorkspaceFamilies,
+} from "@/components/sidebar/sidebar-workspace-families";
+import { SidebarWorkspaceFamily } from "@/components/sidebar/sidebar-workspace-family";
 import type { SidebarWorkspaceGroup } from "@/components/sidebar/sidebar-labels";
 import {
   SidebarWorkspaceContextMenu,
@@ -220,6 +225,7 @@ interface SidebarWorkspaceListProps {
   /** Whether a project filter is actually being applied — the resolved list, not the stored one. */
   hasActiveProjectFilter: boolean;
   workspaceEntriesByKey: ReadonlyMap<string, SidebarWorkspaceEntry>;
+  families: SidebarWorkspaceFamilies;
   collapsedProjectKeys: ReadonlySet<string>;
   onToggleProjectCollapsed: (projectViewKey: string) => void;
   shortcutIndexByWorkspaceKey: Map<string, number>;
@@ -1543,6 +1549,7 @@ function WorkspaceRow({
 function ProjectBlock({
   project,
   workspaceEntriesByKey,
+  families,
   collapsed,
   displayName,
   iconDataUri,
@@ -1568,6 +1575,7 @@ function ProjectBlock({
 }: {
   project: SidebarProjectEntry;
   workspaceEntriesByKey: ReadonlyMap<string, SidebarWorkspaceEntry>;
+  families: SidebarWorkspaceFamilies;
   collapsed: boolean;
   displayName: string;
   iconDataUri: string | null;
@@ -1620,37 +1628,34 @@ function ProjectBlock({
     enabled: selectionEnabled,
   });
 
-  const renderWorkspaceRow = useCallback(
+  const renderPlainWorkspaceRow = useCallback(
     (
-      item: SidebarWorkspacePlacement,
+      workspace: SidebarWorkspacePlacement,
       input?: {
         drag?: () => void;
         isDragging?: boolean;
         dragHandleProps?: DraggableListDragHandleProps;
       },
-    ) => {
-      return (
-        <MemoWorkspaceRowItem
-          workspace={item}
-          workspaceEntry={workspaceEntriesByKey.get(item.workspaceKey) ?? null}
-          hostBadge={hostBadgeByServerId.get(item.serverId) ?? null}
-          shortcutNumber={shortcutIndexByWorkspaceKey.get(item.workspaceKey) ?? null}
-          showShortcutBadge={showShortcutBadges}
-          canCopyBranchName={project.projectKind === "git"}
-          canPin={supportsPinningByServerId.get(item.serverId) === true}
-          onToggleWorkspacePin={onToggleWorkspacePin}
-          isCreating={creatingWorkspaceIds.has(item.workspaceId)}
-          selectionEnabled={selectionEnabled}
-          activeWorkspaceSelection={activeWorkspaceSelection}
-          onWorkspacePress={onWorkspacePress}
-          drag={input?.drag}
-          isDragging={input?.isDragging}
-          dragHandleProps={input?.dragHandleProps}
-        />
-      );
-    },
+    ) => (
+      <MemoWorkspaceRowItem
+        workspace={workspace}
+        workspaceEntry={workspaceEntriesByKey.get(workspace.workspaceKey) ?? null}
+        hostBadge={hostBadgeByServerId.get(workspace.serverId) ?? null}
+        shortcutNumber={shortcutIndexByWorkspaceKey.get(workspace.workspaceKey) ?? null}
+        showShortcutBadge={showShortcutBadges}
+        canCopyBranchName={workspace.projectKind === "git"}
+        canPin={supportsPinningByServerId.get(workspace.serverId) === true}
+        onToggleWorkspacePin={onToggleWorkspacePin}
+        isCreating={creatingWorkspaceIds.has(workspace.workspaceId)}
+        selectionEnabled={selectionEnabled}
+        activeWorkspaceSelection={activeWorkspaceSelection}
+        onWorkspacePress={onWorkspacePress}
+        drag={input?.drag}
+        isDragging={input?.isDragging}
+        dragHandleProps={input?.dragHandleProps}
+      />
+    ),
     [
-      project.projectKind,
       onToggleWorkspacePin,
       supportsPinningByServerId,
       activeWorkspaceSelection,
@@ -1662,6 +1667,37 @@ function ProjectBlock({
       showShortcutBadges,
       workspaceEntriesByKey,
     ],
+  );
+  const renderChildWorkspaceRow = useCallback(
+    (workspace: SidebarWorkspacePlacement) => renderPlainWorkspaceRow(workspace),
+    [renderPlainWorkspaceRow],
+  );
+
+  const renderWorkspaceRow = useCallback(
+    (
+      item: SidebarWorkspacePlacement,
+      input?: {
+        drag?: () => void;
+        isDragging?: boolean;
+        dragHandleProps?: DraggableListDragHandleProps;
+      },
+    ) => {
+      const childWorkspaces = getSidebarWorkspaceChildren(families, item.workspaceKey);
+      if (childWorkspaces.length === 0) return renderPlainWorkspaceRow(item, input);
+      // A child can belong to another project; it still hangs off the parent that launched it.
+      return (
+        <View>
+          {renderPlainWorkspaceRow(item, input)}
+          <SidebarWorkspaceFamily
+            parentWorkspaceKey={item.workspaceKey}
+            childWorkspaces={childWorkspaces}
+            indented={false}
+            renderChild={renderChildWorkspaceRow}
+          />
+        </View>
+      );
+    },
+    [families, renderChildWorkspaceRow, renderPlainWorkspaceRow],
   );
 
   const renderWorkspace = useCallback(
@@ -1828,6 +1864,7 @@ function areProjectBlockPropsEqual(previous: ProjectBlockProps, next: ProjectBlo
   return (
     previous.project === next.project &&
     previous.workspaceEntriesByKey === next.workspaceEntriesByKey &&
+    previous.families === next.families &&
     previous.collapsed === next.collapsed &&
     previous.displayName === next.displayName &&
     previous.iconDataUri === next.iconDataUri &&
@@ -1889,6 +1926,7 @@ export function SidebarWorkspaceList({
   hasProjectsBeforeFilter,
   hasActiveProjectFilter,
   workspaceEntriesByKey,
+  families,
   collapsedProjectKeys,
   onToggleProjectCollapsed,
   shortcutIndexByWorkspaceKey,
@@ -1968,6 +2006,7 @@ export function SidebarWorkspaceList({
         workspaceGroups={workspaceGroups}
         pinnedGroups={pinnedGroups}
         workspaceEntriesByKey={workspaceEntriesByKey}
+        families={families}
         projectIconByProjectViewKey={projectIconByProjectViewKey}
         shortcutIndexByWorkspaceKey={shortcutIndexByWorkspaceKey}
         onWorkspacePress={onWorkspacePress}
@@ -1985,6 +2024,7 @@ export function SidebarWorkspaceList({
         projects={projects}
         pinnedGroups={pinnedGroups}
         workspaceEntriesByKey={workspaceEntriesByKey}
+        families={families}
         projectIconByProjectViewKey={projectIconByProjectViewKey}
         collapsedProjectKeys={collapsedProjectKeys}
         onToggleProjectCollapsed={onToggleProjectCollapsed}
@@ -2020,6 +2060,7 @@ function SidebarGroupedModeList({
   workspaceGroups,
   pinnedGroups,
   workspaceEntriesByKey,
+  families,
   projectIconByProjectViewKey,
   shortcutIndexByWorkspaceKey: _projectShortcutIndex,
   onWorkspacePress,
@@ -2035,6 +2076,7 @@ function SidebarGroupedModeList({
   workspaceGroups: SidebarWorkspaceGroup[];
   pinnedGroups: PinnedSidebarGroups;
   workspaceEntriesByKey: ReadonlyMap<string, SidebarWorkspaceEntry>;
+  families: SidebarWorkspaceFamilies;
   projectIconByProjectViewKey: ReadonlyMap<string, string | null>;
   shortcutIndexByWorkspaceKey: Map<string, number>;
   onWorkspacePress?: () => void;
@@ -2061,6 +2103,7 @@ function SidebarGroupedModeList({
     <SidebarStatusWorkspaceList
       groups={workspaceGroups}
       pinnedWorkspaces={pinnedWorkspaces}
+      families={families}
       projectIconByProjectViewKey={projectIconByProjectViewKey}
       shortcutIndexByWorkspaceKey={_projectShortcutIndex}
       showShortcutBadges={showShortcutBadges}
@@ -2081,6 +2124,7 @@ function ProjectModeList({
   projects,
   pinnedGroups,
   workspaceEntriesByKey,
+  families,
   projectIconByProjectViewKey,
   collapsedProjectKeys,
   onToggleProjectCollapsed,
@@ -2295,6 +2339,7 @@ function ProjectModeList({
           key={item.viewKey}
           project={item}
           workspaceEntriesByKey={workspaceEntriesByKey}
+          families={families}
           collapsed={collapsedProjectKeys.has(item.viewKey)}
           displayName={item.projectName}
           iconDataUri={projectIconByProjectViewKey.get(item.viewKey) ?? null}
@@ -2322,6 +2367,7 @@ function ProjectModeList({
     },
     [
       collapsedProjectKeys,
+      families,
       activeWorkspaceSelection,
       handleWorktreeCreated,
       handleWorkspaceReorder,
@@ -2348,13 +2394,11 @@ function ProjectModeList({
     [renderProjectBlock],
   );
 
-  const renderPinnedChat = useCallback(
-    ({
-      item: workspace,
-      drag,
-      isActive,
-      dragHandleProps,
-    }: DraggableRenderItemInfo<SidebarWorkspacePlacement>) => {
+  const renderPinnedChatRow = useCallback(
+    (
+      workspace: SidebarWorkspacePlacement,
+      input?: Partial<DraggableRenderItemInfo<SidebarWorkspacePlacement>>,
+    ) => {
       return (
         <MemoWorkspaceRowItem
           workspace={workspace}
@@ -2373,9 +2417,9 @@ function ProjectModeList({
           selectionEnabled={selectionEnabled}
           activeWorkspaceSelection={activeWorkspaceSelection}
           onWorkspacePress={onWorkspacePress}
-          drag={drag}
-          isDragging={isActive}
-          dragHandleProps={dragHandleProps}
+          drag={input?.drag}
+          isDragging={input?.isActive}
+          dragHandleProps={input?.dragHandleProps}
         />
       );
     },
@@ -2392,6 +2436,29 @@ function ProjectModeList({
       projectIconByProjectViewKey,
       workspaceEntriesByKey,
     ],
+  );
+
+  const renderPinnedChildRow = useCallback(
+    (workspace: SidebarWorkspacePlacement) => renderPinnedChatRow(workspace),
+    [renderPinnedChatRow],
+  );
+  const renderPinnedChat = useCallback(
+    (info: DraggableRenderItemInfo<SidebarWorkspacePlacement>) => {
+      const childWorkspaces = getSidebarWorkspaceChildren(families, info.item.workspaceKey);
+      if (childWorkspaces.length === 0) return renderPinnedChatRow(info.item, info);
+      return (
+        <View>
+          {renderPinnedChatRow(info.item, info)}
+          <SidebarWorkspaceFamily
+            parentWorkspaceKey={info.item.workspaceKey}
+            childWorkspaces={childWorkspaces}
+            indented={false}
+            renderChild={renderPinnedChildRow}
+          />
+        </View>
+      );
+    },
+    [families, renderPinnedChatRow, renderPinnedChildRow],
   );
 
   const projectBody =
