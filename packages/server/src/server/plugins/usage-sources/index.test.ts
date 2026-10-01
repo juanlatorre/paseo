@@ -277,3 +277,38 @@ test("discovery identifies a source's logins concurrently and keeps their order"
   expect(reports.map((entry) => entry.id)).toEqual(["claude:same"]);
   expect(fetched).toEqual([0, 1, 2]);
 });
+
+test("a failed refresh keeps the last available report for up to an hour", async () => {
+  let now = 0;
+  let calls = 0;
+  let failing = false;
+  const registry = new UsageSourceRegistry(() => now);
+  registry.register(
+    source({
+      id: "claude",
+      discover: async () => [{ account: "me" }],
+      fetch: async () => {
+        calls += 1;
+        if (failing) throw new Error("Claude usage API returned 429");
+        return { status: "available", windows: [{ id: "session", label: "5h" }] };
+      },
+    }),
+  );
+  const good = await registry.listReports();
+  expect(good[0]?.report.status).toBe("available");
+
+  failing = true;
+  now = 301_000;
+  const rateLimited = await registry.listReports();
+  expect(rateLimited).toEqual(good);
+  expect(calls).toBe(2);
+  // The failure re-arms the cache, so the next attempt waits a full window.
+  now = 302_000;
+  await registry.listReports();
+  expect(calls).toBe(2);
+
+  now = 3_700_000;
+  const expired = await registry.listReports();
+  expect(expired[0]?.report.status).toBe("error");
+  expect(expired[0]?.report.error).toBe("Claude usage API returned 429");
+});

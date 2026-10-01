@@ -19,12 +19,20 @@ interface KnownReport {
   label?: string;
 }
 
+/**
+ * How long a report that went unavailable keeps standing in for its account. Usage APIs rate-limit
+ * hard and share their quota with every other client on the same login, so one failed refresh is
+ * the normal case, not a broken account.
+ */
+const LAST_AVAILABLE_MAX_AGE_MS = 3_600_000;
+
 /** Owns account identity, ordered logins for each account, and the five-minute fetch cache. */
 export class UsageSourceRegistry {
   private readonly sources = new Map<string, UsageSource>();
   private readonly known = new Map<string, KnownReport>();
   private readonly cache = new Map<string, { at: number; entry: UsageReportEntry }>();
   private readonly pending = new Map<string, Promise<UsageReportEntry>>();
+  private readonly lastAvailable = new Map<string, { at: number; entry: UsageReportEntry }>();
 
   constructor(
     private readonly now: () => number = Date.now,
@@ -40,6 +48,9 @@ export class UsageSourceRegistry {
     this.sources.delete(id);
     for (const key of this.known.keys()) if (key.startsWith(`${id}:`)) this.known.delete(key);
     for (const key of this.cache.keys()) if (key.startsWith(`${id}:`)) this.cache.delete(key);
+    for (const key of this.lastAvailable.keys()) {
+      if (key.startsWith(`${id}:`)) this.lastAvailable.delete(key);
+    }
   }
 
   private async identify(
@@ -168,6 +179,7 @@ export class UsageSourceRegistry {
           entry = this.errorEntry(known.source, id, error, known.label);
         }
       }
+      entry = this.withLastAvailable(id, entry);
       this.writeCache(id, entry);
       return entry;
     })();
@@ -176,6 +188,25 @@ export class UsageSourceRegistry {
       if (this.pending.get(id) === request) this.pending.delete(id);
     });
     return request;
+  }
+
+  /**
+   * Records an available report, or answers a failed refresh with the last one that was. The
+   * stale entry keeps its own `fetchedAt`, so the age on screen stays true; caching it again
+   * holds the next attempt off for a full window instead of retrying into the same limit.
+   */
+  private withLastAvailable(id: string, entry: UsageReportEntry): UsageReportEntry {
+    const now = this.now();
+    if (entry.report.status === "available") {
+      this.lastAvailable.set(id, { at: now, entry });
+      return entry;
+    }
+    if (entry.report.status !== "error") return entry;
+    const last = this.lastAvailable.get(id);
+    if (!last) return entry;
+    if (now - last.at < LAST_AVAILABLE_MAX_AGE_MS) return last.entry;
+    this.lastAvailable.delete(id);
+    return entry;
   }
 
   private writeCache(id: string, entry: UsageReportEntry): void {
