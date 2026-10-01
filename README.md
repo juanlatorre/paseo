@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="packages/website/public/logo.svg" width="64" height="64" alt="Paseo logo">
+  <img src="packages/website/public/logo.svg" width="64" height="64" alt="TePaseo logo">
 </p>
 
-<h1 align="center">Paseo</h1>
+<h1 align="center">TePaseo</h1>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -12,31 +12,27 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/getpaseo/paseo/stargazers">
-    <img src="https://img.shields.io/github/stars/getpaseo/paseo?style=flat&logo=github" alt="GitHub stars">
-  </a>
-  <a href="https://github.com/getpaseo/paseo/releases">
-    <img src="https://img.shields.io/github/v/release/getpaseo/paseo?style=flat&logo=github" alt="GitHub release">
-  </a>
-  <a href="https://x.com/moboudra">
-    <img src="https://img.shields.io/badge/%40moboudra-555?logo=x" alt="X">
-  </a>
-  <a href="https://discord.gg/jz8T2uahpH">
-    <img src="https://img.shields.io/badge/Discord-555?logo=discord" alt="Discord">
-  </a>
-  <a href="https://www.reddit.com/r/PaseoAI/">
-    <img src="https://img.shields.io/badge/Reddit-555?logo=reddit" alt="Reddit">
+  <a href="https://github.com/juanlatorre/paseo/stargazers">
+    <img src="https://img.shields.io/github/stars/juanlatorre/paseo?style=flat&logo=github" alt="GitHub stars">
   </a>
 </p>
 
 <p align="center">One interface for Claude Code, Codex, Copilot, OpenCode, Pi, Antigravity, and Muse Code agents.</p>
 
+> **TePaseo is a fork of [Paseo](https://github.com/getpaseo/paseo)** by [@boudra](https://github.com/boudra). It adds:
+>
+> - **Subagents nested in the sidebar.** Workspaces an agent launched fold under that agent's row, with a status dot per subagent, so you review the orchestrator instead of every worker.
+> - **Agent icon on workspace rows.** Each row shows which agent runs in it.
+> - **Steadier usage readings.** A rate-limited usage refresh (HTTP 429) keeps the last good reading instead of showing an error.
+>
+> Everything else, including the CLI, packages, and docs, is Paseo's. The CLI is still `paseo`.
+
 <p align="center">
-  <img src="https://paseo.sh/hero-mockup.png" alt="Paseo app screenshot" width="100%">
+  <img src="https://paseo.sh/hero-mockup.png" alt="TePaseo app screenshot" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://paseo.sh/mobile-mockup.png" alt="Paseo mobile app" width="100%">
+  <img src="https://paseo.sh/mobile-mockup.png" alt="TePaseo mobile app" width="100%">
 </p>
 
 Run agents in parallel on your own machines. Ship from your phone or your desk.
@@ -45,7 +41,7 @@ Run agents in parallel on your own machines. Ship from your phone or your desk.
 - **Multi-provider:** Claude Code, Codex, Copilot, OpenCode, Pi, Antigravity, and Muse Code through the same interface. Pick the right model for each job.
 - **Voice control:** Dictate tasks or talk through problems in voice mode. Hands-free when you need it.
 - **Cross-device:** iOS, Android, desktop, web, and CLI. Start work at your desk, check in from your phone, script it from the terminal.
-- **Privacy-first:** Paseo doesn't have any telemetry, tracking, or forced log-ins.
+- **Privacy-first:** TePaseo doesn't have any telemetry, tracking, or forced log-ins.
 
 ## Plugins
 
@@ -57,7 +53,7 @@ machine and inside connected clients; install only code you trust.
 
 ## Getting Started
 
-Paseo runs a local server called the daemon that manages your coding agents. Clients like the desktop app, mobile app, web app, and CLI connect to it.
+TePaseo runs a local server called the daemon that manages your coding agents. Clients like the desktop app, mobile app, web app, and CLI connect to it.
 
 ### Prerequisites
 
@@ -73,22 +69,33 @@ You need at least one agent CLI installed and configured with your credentials:
 
 ### Desktop app (recommended)
 
-Download it from [paseo.sh/download](https://paseo.sh/download) or the [GitHub releases page](https://github.com/getpaseo/paseo/releases). Open the app and the daemon starts automatically. Nothing else to install.
+TePaseo doesn't publish builds yet. Build the desktop app from source (Node.js version in `.tool-versions`):
+
+```bash
+git clone https://github.com/juanlatorre/paseo.git tepaseo
+cd tepaseo
+npm ci
+npm run build:desktop
+```
+
+The app lands in `packages/desktop/release/`. It isn't signed, so macOS blocks the first launch: right-click the app and choose **Open**. Open the app and the daemon starts automatically.
+
+Want the official, signed build instead? Get Paseo from [paseo.sh/download](https://paseo.sh/download).
 
 To connect from your phone, open **Settings → your host → Pair Device**.
 
 ### CLI / headless
 
-Install the CLI and start Paseo:
+Install the CLI and start the daemon:
 
 ```bash
 npm install -g @getpaseo/cli
 paseo
 ```
 
-Paseo starts locally, then asks whether to enable the end-to-end encrypted relay for device pairing. If you decline, connect directly over TCP, Tailscale, or another VPN. This path is useful for servers and remote machines.
+The daemon starts locally, then asks whether to enable the end-to-end encrypted relay for device pairing. If you decline, connect directly over TCP, Tailscale, or another VPN. This path is useful for servers and remote machines.
 
-For full setup and configuration, see:
+For full setup and configuration, see Paseo's docs, which apply to TePaseo as is:
 
 - [Docs](https://paseo.sh/docs)
 - [Connectivity guide](https://paseo.sh/docs/connectivity)
@@ -96,7 +103,7 @@ For full setup and configuration, see:
 
 ### Docker
 
-Run the Paseo daemon and self-hosted web UI in Docker:
+Run the daemon and self-hosted web UI in Docker. This image is upstream Paseo's, without TePaseo's changes:
 
 ```bash
 docker run -d --name paseo \
@@ -153,7 +160,7 @@ See the [SDK quickstart](https://paseo.sh/docs/sdk/quickstart), [recipes](https:
 
 ## Skills
 
-Skills teach your agent to use Paseo to orchestrate other agents.
+Skills teach your agent to use TePaseo to orchestrate other agents.
 
 ```bash
 npx skills add getpaseo/paseo
@@ -169,7 +176,7 @@ Then use them in any agent conversation:
 
 Quick monorepo package map:
 
-- `packages/server`: Paseo daemon (agent process orchestration, WebSocket API, MCP server)
+- `packages/server`: daemon (agent process orchestration, WebSocket API, MCP server)
 - `packages/app`: Expo client (iOS, Android, web)
 - `packages/cli`: `paseo` CLI for daemon and agent workflows
 - `packages/desktop`: Electron desktop app
@@ -195,11 +202,9 @@ npm run build:server
 npm run typecheck
 ```
 
-## Sponsors
+## Support Paseo
 
-Paseo is built by one person and funded by the people who use it. Support the work on [GitHub Sponsors](https://github.com/sponsors/boudra). Companies can [sponsor Paseo](https://paseo.sh/sponsor#spot) monthly and have their logo shown here and on the paseo.sh homepage.
-
-<!-- Sponsor logos go here, in the same order as packages/website/src/data/sponsors.ts -->
+TePaseo exists because of Paseo, which is built by one person and funded by the people who use it. Support that work on [GitHub Sponsors](https://github.com/sponsors/boudra), or join the [Discord](https://discord.gg/jz8T2uahpH) and [Reddit](https://www.reddit.com/r/PaseoAI/).
 
 ## Related projects
 
@@ -208,4 +213,4 @@ Paseo is built by one person and funded by the people who use it. Support the wo
 
 ## License
 
-Apache-2.0
+Apache-2.0, same as Paseo.
