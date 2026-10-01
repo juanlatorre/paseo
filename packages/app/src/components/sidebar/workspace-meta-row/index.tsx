@@ -9,7 +9,7 @@ import {
 } from "@getpaseo/protocol/workspace-labels";
 import type { HostBadgeModel } from "@/hosts/appearance";
 import { HostBadge, HOST_BADGE_ICON_SIZE } from "@/hosts/host-badge";
-import { getProviderIcon } from "@/components/provider-icons";
+import { useProviderIcon } from "@/components/provider-icons";
 import { WorkspaceLabelChip, WORKSPACE_LABEL_CHIP_INSET } from "@/workspace-labels/chip";
 import type { PrHint } from "@/git/pr-hint";
 import { getForgePresentation, normalizeForge } from "@/git/forge";
@@ -159,7 +159,7 @@ function IdentityItem({ kind, name }: { kind: "branch" | "project"; name: string
  * object because the icon component is picked at runtime and cannot be wrapped ahead of time.
  */
 function AgentItem({ provider }: { provider: string }) {
-  const Icon = getProviderIcon(provider);
+  const Icon = useProviderIcon(provider);
   return (
     <View style={styles.identityIcon} testID="sidebar-workspace-agent">
       <Icon size={META_ICON_SIZE} color={styles.agentIcon.color} />

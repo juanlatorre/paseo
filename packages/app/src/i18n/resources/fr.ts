@@ -1197,7 +1197,7 @@ export const fr: TranslationResources = {
       discord: "Discord",
       github: "Créer un ticket GitHub",
       whatsNew: "Nouveautés",
-      appName: "Paseo",
+      appName: "TePaseo",
     },
     sections: {
       sessions: "Historique",
@@ -1369,7 +1369,7 @@ export const fr: TranslationResources = {
           "Cela arrêtera immédiatement le démon intégré. Les agents en cours d'exécution et les terminaux connectés au démon intégré seront arrêtés.",
         pauseAndStop: "Pause et arrêt",
         registrationFailed:
-          "Built-in daemon started, but Paseo could not save the localhost connection. Toggle daemon management off and on again, or add localhost manually.",
+          "Built-in daemon started, but TePaseo could not save the localhost connection. Toggle daemon management off and on again, or add localhost manually.",
         pausedStopFailed:
           "La gestion du démon intégré a été suspendue, maisPaseon'a ​​pas pu arrêter le démon.",
         updateFailed: "Impossible de mettre à jour la gestion des démons intégrés.",
@@ -1511,7 +1511,7 @@ export const fr: TranslationResources = {
     },
   },
   rootError: {
-    title: "Paseo a rencontré un problème.",
+    title: "TePaseo a rencontré un problème.",
     body: "Réessayez pour recharger l'application. Si cela continue, joignez les détails ci-dessous au signalement.",
     details: "Détails",
   },
@@ -1755,7 +1755,7 @@ export const fr: TranslationResources = {
     },
     remoteSsh: {
       title: "SSH distant",
-      helper: "Connectez-vous à un daemon Paseo sur l’hôte distant.",
+      helper: "Connectez-vous à un daemon TePaseo sur l’hôte distant.",
       fields: {
         target: "Hôte SSH",
       },
@@ -1812,13 +1812,13 @@ export const fr: TranslationResources = {
       enableDescription:
         "Le relais permet à cet appareil de se connecter depuis n’importe où. Le trafic de couplage est chiffré de bout en bout.",
       relayDocs: "Fonctionnement du relais",
-      relayDocsAccessibility: "Lire comment fonctionne le relais Paseo",
+      relayDocsAccessibility: "Lire comment fonctionne le relais TePaseo",
       enableRelay: "Activer le relais",
       enablingRelay: "Activation...",
       notNow: "Pas maintenant",
       directConnectionHint:
         "Sans relais, connectez-vous directement via TCP, Tailscale ou un autre VPN. Aucun code QR n’est créé.",
-      updateRequired: "Mettez à jour l’hôte pour activer le relais depuis Paseo Desktop.",
+      updateRequired: "Mettez à jour l’hôte pour activer le relais depuis TePaseo Desktop.",
       unavailable: "Offre de jumelage indisponible.",
       hint: "Scannez ce codeQRavecPaseosur votre téléphone ou copiez le lien ci-dessous.",
       securityWarning:
@@ -1976,8 +1976,8 @@ export const fr: TranslationResources = {
       other: "a utilisé {{count}} autres outils",
     },
     paseoCalls: {
-      one: "a appelé Paseo {{count}} fois",
-      other: "a appelé Paseo {{count}} fois",
+      one: "a appelé TePaseo {{count}} fois",
+      other: "a appelé TePaseo {{count}} fois",
     },
     and: "et",
   },
@@ -2061,7 +2061,7 @@ export const fr: TranslationResources = {
       send: "Envoyer",
       sending: "Envoi...",
       sentTitle: "Notification de test envoyée",
-      sentDescription: "Paseo a transmis la notification au système d’exploitation.",
+      sentDescription: "TePaseo a transmis la notification au système d’exploitation.",
       sendFailedTitle: "Impossible d’envoyer la notification de test",
     },
     hostSections: {
@@ -2080,14 +2080,14 @@ export const fr: TranslationResources = {
     metadataGeneration: {
       title: "Génération de métadonnées",
       description:
-        "Choisissez le modèle utilisé par Paseo pour les titres d’espaces de travail, les noms de branches, les messages de commit et les brouillons de pull request",
+        "Choisissez le modèle utilisé par TePaseo pour les titres d’espaces de travail, les noms de branches, les messages de commit et les brouillons de pull request",
       selection: "Sélection du modèle",
       automatic: "Automatique",
       preferred: "Manuel",
-      automaticHint: "Paseo choisit un modèle rapide disponible",
-      preferredHint: "Choisissez le modèle utilisé par Paseo",
+      automaticHint: "TePaseo choisit un modèle rapide disponible",
+      preferredHint: "Choisissez le modèle utilisé par TePaseo",
       model: "Modèle",
-      fallbackHint: "S’il est indisponible, Paseo utilise un autre modèle disponible",
+      fallbackHint: "S’il est indisponible, TePaseo utilise un autre modèle disponible",
       docs: "Documentation",
       saveError: "Impossible de mettre à jour la génération de métadonnées",
     },
@@ -2098,7 +2098,7 @@ export const fr: TranslationResources = {
         title: "Données du navigateur",
         siteData: "Cookies et données des sites",
         description:
-          "Les onglets du navigateur partagent les connexions et les données des sites dans Paseo.",
+          "Les onglets du navigateur partagent les connexions et les données des sites dans TePaseo.",
         clear: "Effacer les données du navigateur",
         clearing: "Effacement...",
         confirmTitle: "Effacer les données du navigateur ?",
@@ -2621,7 +2621,7 @@ export const fr: TranslationResources = {
         },
         update: {
           desktopManagedHint:
-            "Ce daemon est géré par Paseo Desktop. Mettez à jour Paseo Desktop sur l’hôte.",
+            "Ce daemon est géré par TePaseo Desktop. Mettez à jour TePaseo Desktop sur l’hôte.",
           title: "Update daemon",
           hint: "Update the daemon to the latest version and restart it",
           confirm: "Update",

@@ -1,6 +1,7 @@
 process.emitWarning = (() => {}) as typeof process.emitWarning;
 
 import log from "electron-log/main";
+import { APP_DISPLAY_NAME } from "./brand.js";
 log.transports.console.level = "info";
 log.initialize({ spyRendererConsole: true });
 
@@ -687,7 +688,7 @@ async function createWindow(
     ? clampWindowStateToWorkAreas(savedWindowState, getWorkAreasPrimaryFirst())
     : null;
 
-  const title = devWorktreeName ? `${APP_NAME} (${devWorktreeName})` : APP_NAME;
+  const title = devWorktreeName ? `${APP_DISPLAY_NAME} (${devWorktreeName})` : APP_DISPLAY_NAME;
   const mainWindow = new BrowserWindow({
     title,
     ...resolveWindowBounds(restoredWindowState),

@@ -1,4 +1,5 @@
 import { app, Menu, BrowserWindow, ipcMain } from "electron";
+import { APP_DISPLAY_NAME } from "../brand.js";
 import { getActivePaseoBrowserWebContentsForHostWindow } from "./browser-webviews/index.js";
 
 interface ShowContextMenuInput {
@@ -75,17 +76,17 @@ function buildApplicationMenuTemplate(
     ...(isMac
       ? [
           {
-            label: app.name,
+            label: APP_DISPLAY_NAME,
             submenu: [
-              { role: "about" as const },
+              { role: "about" as const, label: `About ${APP_DISPLAY_NAME}` },
               { type: "separator" as const },
               { role: "services" as const },
               { type: "separator" as const },
-              { role: "hide" as const },
+              { role: "hide" as const, label: `Hide ${APP_DISPLAY_NAME}` },
               { role: "hideOthers" as const },
               { role: "unhide" as const },
               { type: "separator" as const },
-              { role: "quit" as const },
+              { role: "quit" as const, label: `Quit ${APP_DISPLAY_NAME}` },
             ],
           },
         ]
