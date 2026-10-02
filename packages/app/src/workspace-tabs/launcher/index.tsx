@@ -14,6 +14,7 @@ import { useDaemonConfig } from "@/hooks/use-daemon-config";
 import { resolvePluginIcon } from "@/plugins/icons";
 import { useInstalledPlugins } from "@/plugins/registry";
 import { pluginPanelSupportsLocation } from "@/plugins/workspace-panels/locations";
+import { useSessionStore } from "@/stores/session-store";
 import { buildSettingsHostSectionRoute } from "@/utils/host-routes";
 import type { NewTabSelection } from "@/workspace-tabs/new-tab";
 import type { WorkspaceTabTarget } from "@/workspace-tabs/model";
@@ -83,6 +84,7 @@ const BUILT_IN_SELECTIONS: Record<BuiltInLaunchItemId, NewTabSelection> = {
   files: { kind: "target", target: { kind: "files" } },
   browser: { kind: "browser" },
   pullRequest: { kind: "target", target: { kind: "pull_request" } },
+  simulator: { kind: "target", target: { kind: "simulator" } },
 };
 
 function getLaunchPresentation(kind: WorkspaceTabTarget["kind"]): PanelPresentation {
@@ -103,6 +105,9 @@ export function useWorkspaceTabLaunchCatalog(input: {
   invariant(launcher, "NewTabLauncherProvider is required");
   const { config } = useDaemonConfig(serverId);
   const plugins = useInstalledPlugins();
+  const simulatorSupported = useSessionStore(
+    (state) => state.sessions[serverId]?.serverInfo?.features?.iosSimulator === true,
+  );
   ensurePanelsRegistered();
 
   const launchSelection = useCallback(
@@ -120,6 +125,7 @@ export function useWorkspaceTabLaunchCatalog(input: {
     const diffPresentation = getLaunchPresentation("working_diff");
     const filesPresentation = getLaunchPresentation("files");
     const pullRequestPresentation = getLaunchPresentation("pull_request");
+    const simulatorPresentation = getLaunchPresentation("simulator");
     const builtIns: Record<BuiltInLaunchItemId, WorkspaceTabLaunchItem & { hidden?: boolean }> = {
       agent: {
         id: "agent",
@@ -186,6 +192,15 @@ export function useWorkspaceTabLaunchCatalog(input: {
         hidden: !launcher.showPullRequest,
         launch: launchSelection(BUILT_IN_SELECTIONS.pullRequest),
       },
+      simulator: {
+        id: "simulator",
+        label: simulatorPresentation.label(t),
+        Icon: simulatorPresentation.icon,
+        disabled: false,
+        panelKind: "simulator",
+        hidden: !simulatorSupported,
+        launch: launchSelection(BUILT_IN_SELECTIONS.simulator),
+      },
     };
     const tabItems = getBuiltInLaunchOrder(purpose).flatMap((id) => {
       const item = builtIns[id];
@@ -248,6 +263,7 @@ export function useWorkspaceTabLaunchCatalog(input: {
     purpose,
     host,
     serverId,
+    simulatorSupported,
     t,
   ]);
 }

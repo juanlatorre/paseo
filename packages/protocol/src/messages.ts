@@ -2893,6 +2893,68 @@ export const WorkspaceScriptStopRequestSchema = z.object({
   requestId: z.string(),
 });
 
+export const SimulatorDeviceSchema = z.object({
+  udid: z.string(),
+  name: z.string(),
+  runtime: z.string().optional(),
+  state: z.string().optional(),
+  deviceType: z.string().optional(),
+});
+
+export const SimulatorDeviceListRequestSchema = z.object({
+  type: z.literal("simulator.device.list.request"),
+  requestId: z.string(),
+});
+
+export const SimulatorStreamStartRequestSchema = z.object({
+  type: z.literal("simulator.stream.start.request"),
+  deviceId: z.string(),
+  requestId: z.string(),
+});
+
+export const SimulatorStreamStopRequestSchema = z.object({
+  type: z.literal("simulator.stream.stop.request"),
+  deviceId: z.string(),
+  requestId: z.string(),
+});
+
+export const SimulatorTouchPointSchema = z.object({
+  type: z.enum(["begin", "move", "end"]),
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+});
+
+export const SimulatorInputActionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("tap"),
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+  }),
+  z.object({
+    kind: z.literal("gesture"),
+    points: z.array(SimulatorTouchPointSchema).min(1),
+  }),
+  z.object({
+    kind: z.literal("type"),
+    text: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("button"),
+    name: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("rotate"),
+    orientation: z.enum(["portrait", "portrait_upside_down", "landscape_left", "landscape_right"]),
+  }),
+]);
+
+export const SimulatorInputSendRequestSchema = z.object({
+  type: z.literal("simulator.input.send.request"),
+  deviceId: z.string(),
+  action: SimulatorInputActionSchema,
+  requestId: z.string(),
+});
+
 export const SubscribeTerminalRequestSchema = z.object({
   type: z.literal("subscribe_terminal_request"),
   terminalId: z.string(),
@@ -3223,6 +3285,10 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   LoopInspectRequestSchema,
   LoopLogsRequestSchema,
   LoopStopRequestSchema,
+  SimulatorDeviceListRequestSchema,
+  SimulatorStreamStartRequestSchema,
+  SimulatorStreamStopRequestSchema,
+  SimulatorInputSendRequestSchema,
 ]);
 
 export type SessionInboundMessage = z.infer<typeof SessionInboundMessageSchema>;
@@ -3449,6 +3515,8 @@ export const ServerInfoStatusPayloadSchema = z
         "terminal-input-mode-replay": z.boolean().optional(),
         // COMPAT(terminalSizeOwnership): added in v0.2.6, remove gate after 2027-02-02.
         "terminal-size-ownership": z.boolean().optional(),
+        // COMPAT(iosSimulator): added in v0.7.x, remove gate after 2027-04-01.
+        iosSimulator: z.boolean().optional(),
         // COMPAT(rewind): added in v0.1.X, drop the gate when floor >= v0.1.X.
         rewind: z.boolean().optional(),
         // COMPAT(agentTimelinePromptIndex): added in v0.2.X, drop the gate when floor >= v0.2.X.
@@ -4334,6 +4402,47 @@ export const WorkspaceScriptStartResponseMessageSchema = z.object({
 export const WorkspaceScriptStopResponseMessageSchema = z.object({
   type: z.literal("workspace.script.stop.response"),
   payload: WorkspaceScriptOperationPayloadSchema,
+});
+
+export const SimulatorDeviceListResponseSchema = z.object({
+  type: z.literal("simulator.device.list.response"),
+  payload: z.object({
+    requestId: z.string(),
+    devices: z.array(SimulatorDeviceSchema),
+    error: z.string().nullable(),
+  }),
+});
+
+// stream.start carries `slot` only on success; frames arrive as simulator
+// binary frames tagged with that slot.
+export const SimulatorStreamStartResponseSchema = z.object({
+  type: z.literal("simulator.stream.start.response"),
+  payload: z.object({
+    requestId: z.string(),
+    deviceId: z.string(),
+    slot: z.number().int().min(0).max(255).optional(),
+    error: z.string().nullable(),
+  }),
+});
+
+export const SimulatorStreamStopResponseSchema = z.object({
+  type: z.literal("simulator.stream.stop.response"),
+  payload: z.object({
+    requestId: z.string(),
+    deviceId: z.string(),
+    success: z.boolean(),
+    error: z.string().nullable(),
+  }),
+});
+
+export const SimulatorInputSendResponseSchema = z.object({
+  type: z.literal("simulator.input.send.response"),
+  payload: z.object({
+    requestId: z.string(),
+    deviceId: z.string(),
+    success: z.boolean(),
+    error: z.string().nullable(),
+  }),
 });
 
 // COMPAT(desktopEditorBridge): added in v0.1.88, remove after 2026-12-03 once old clients no longer parse daemon editor RPC responses.
@@ -6592,6 +6701,10 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   LoopInspectResponseSchema,
   LoopLogsResponseSchema,
   LoopStopResponseSchema,
+  SimulatorDeviceListResponseSchema,
+  SimulatorStreamStartResponseSchema,
+  SimulatorStreamStopResponseSchema,
+  SimulatorInputSendResponseSchema,
   DaemonUpdateProgressMessageSchema,
   DaemonUpdateResponseSchema,
 ]);
@@ -7027,6 +7140,17 @@ export type StartWorkspaceScriptResponse = z.infer<
 >;
 export type SubscribeTerminalRequest = z.infer<typeof SubscribeTerminalRequestSchema>;
 export type SubscribeTerminalResponse = z.infer<typeof SubscribeTerminalResponseSchema>;
+export type SimulatorDevice = z.infer<typeof SimulatorDeviceSchema>;
+export type SimulatorDeviceListRequest = z.infer<typeof SimulatorDeviceListRequestSchema>;
+export type SimulatorDeviceListResponse = z.infer<typeof SimulatorDeviceListResponseSchema>;
+export type SimulatorTouchPoint = z.infer<typeof SimulatorTouchPointSchema>;
+export type SimulatorInputAction = z.infer<typeof SimulatorInputActionSchema>;
+export type SimulatorInputSendRequest = z.infer<typeof SimulatorInputSendRequestSchema>;
+export type SimulatorInputSendResponse = z.infer<typeof SimulatorInputSendResponseSchema>;
+export type SimulatorStreamStartRequest = z.infer<typeof SimulatorStreamStartRequestSchema>;
+export type SimulatorStreamStartResponse = z.infer<typeof SimulatorStreamStartResponseSchema>;
+export type SimulatorStreamStopRequest = z.infer<typeof SimulatorStreamStopRequestSchema>;
+export type SimulatorStreamStopResponse = z.infer<typeof SimulatorStreamStopResponseSchema>;
 export type UnsubscribeTerminalRequest = z.infer<typeof UnsubscribeTerminalRequestSchema>;
 export type TerminalInput = z.infer<typeof TerminalInputSchema>;
 export type TerminalCell = z.infer<typeof TerminalCellSchema>;

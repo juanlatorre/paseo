@@ -165,6 +165,7 @@ import { wrapSessionMessage, type SessionOutboundMessage } from "./messages.js";
 import type { TerminalManager } from "../terminal/terminal-manager.js";
 import { createConfiguredTerminalManager } from "../terminal/terminal-manager-factory.js";
 import { applyTerminalAgentHookSetting } from "../terminal/agent-hooks/terminal-agent-hook-setting.js";
+import { SimulatorStreamBroker } from "../simulator/simulator-stream-broker.js";
 import { loadOrCreateDaemonKeyPair } from "./daemon-keypair.js";
 import { createRelayRuntime, type RelayRuntime } from "./relay-runtime.js";
 import type { PushNotificationSender } from "./push/index.js";
@@ -647,6 +648,9 @@ export async function createPaseoDaemon(
   const terminalManager = createConfiguredTerminalManager({
     getTerminalActivityUrl: () => createTerminalActivityUrl(boundListenTarget),
   });
+  // Simulator mirroring is macOS-only: the serve-sim helper talks to SimulatorKit.
+  const simulatorBroker =
+    process.platform === "darwin" ? new SimulatorStreamBroker({ logger }) : null;
   applyTerminalAgentHookSetting({ store: daemonConfigStore, logger });
 
   const serviceProxyPublicBaseUrl = config.serviceProxy?.publicBaseUrl
@@ -1688,6 +1692,7 @@ export async function createPaseoDaemon(
               pluginRuntime,
               orchestrationSkills,
               workspaceLabelService,
+              simulatorBroker,
             );
             pluginRuntime.bindPaseoSessionHost(wsServer);
             await pluginRuntime.start();
@@ -1765,6 +1770,7 @@ export async function createPaseoDaemon(
     if (wsServer) {
       await wsServer.close();
     }
+    await simulatorBroker?.dispose();
     await serviceProxy.stopStandalone();
     // Force-drop remaining sockets so httpServer.close() resolves promptly.
     // We've already closed wsServer (which sent ws-layer close frames) and

@@ -28,6 +28,8 @@ import type {
   TerminalWorkspaceContributionChangedEvent,
 } from "../terminal/terminal-manager.js";
 import { TerminalSessionController } from "../terminal/terminal-session-controller.js";
+import { SimulatorSessionController } from "../simulator/simulator-session-controller.js";
+import type { SimulatorStreamBroker } from "../simulator/simulator-stream-broker.js";
 import type { TerminalActivity } from "@getpaseo/protocol/terminal-activity";
 import type { BinaryFrame } from "@getpaseo/protocol/binary-frames/index";
 import { CursorError } from "./pagination/cursor.js";
@@ -509,6 +511,7 @@ export interface SessionOptions {
   sttLanguage?: string;
   tts: Resolvable<TextToSpeechProvider | null>;
   terminalManager: TerminalManager | null;
+  simulatorBroker?: SimulatorStreamBroker | null;
   providerSnapshotManager: ProviderSnapshotManager;
   providerUsageService: ProviderUsageService;
   hubExecutionAgents?: HubExecutionAgents;
@@ -721,6 +724,7 @@ export class Session {
   } | null = null;
   private registeredPushToken: string | null = null;
   private readonly terminalManager: TerminalManager | null;
+  private readonly simulatorController: SimulatorSessionController;
   private readonly providerSnapshotManager: ProviderSnapshotManager;
   private readonly serviceProxy: ServiceProxySubsystem | null;
   private readonly scriptRuntimeStore: WorkspaceScriptRuntimeStore | null;
@@ -785,6 +789,7 @@ export class Session {
       sttLanguage,
       tts,
       terminalManager,
+      simulatorBroker,
       providerSnapshotManager,
       providerUsageService,
       serviceProxy,
@@ -993,6 +998,13 @@ export class Session {
       clientSupportsWrapReflow: () =>
         this.clientCapabilities.has(CLIENT_CAPS.terminalReflowableSnapshot),
       getClientBufferedAmount: () => this.getTransportBufferedAmount(),
+    });
+    this.simulatorController = new SimulatorSessionController({
+      broker: simulatorBroker,
+      emit: (msg) => this.emit(msg),
+      emitBinary: (frame) => this.emitBinary(frame),
+      hasBinaryChannel: () => this.onBinaryMessage !== null,
+      sessionLogger: this.sessionLogger,
     });
     this.agentUpdates = createAgentUpdatesService({
       emit: (message) => this.emit(message),
@@ -1965,9 +1977,23 @@ export class Session {
       this.dispatchPluginDirectoryMessage(msg) ??
       this.dispatchPluginMessage(msg) ??
       this.dispatchTerminalMessage(msg) ??
+      this.dispatchSimulatorMessage(msg) ??
       this.dispatchScheduleMessage(msg) ??
       this.dispatchMiscMessage(msg);
     if (promise) await promise;
+  }
+
+  private dispatchSimulatorMessage(msg: SessionInboundMessage): Promise<void> | undefined {
+    if (
+      msg.type === "simulator.device.list.request" ||
+      msg.type === "simulator.stream.start.request" ||
+      msg.type === "simulator.stream.stop.request" ||
+      msg.type === "simulator.input.send.request"
+    ) {
+      this.simulatorController.handleInboundMessage(msg);
+      return Promise.resolve();
+    }
+    return undefined;
   }
 
   private dispatchWorkspaceLifecycleMessage(msg: SessionInboundMessage): Promise<void> | undefined {
@@ -2695,6 +2721,11 @@ export class Session {
     }
     if (binaryFrame.kind === "file_transfer") {
       await this.workspaceFilesSession.handleFileTransferFrame(binaryFrame.frame);
+      return;
+    }
+    if (binaryFrame.kind === "simulator") {
+      // Inbound simulator frames are not used today; stream input travels as
+      // correlated RPCs. Acknowledge and drop so the demuxer stays total.
       return;
     }
     this.terminalController.handleBinaryFrame(binaryFrame.frame);
@@ -7698,6 +7729,8 @@ export class Session {
     await this.voiceSession.cleanup();
 
     this.terminalController.dispose();
+
+    this.simulatorController.dispose();
 
     this.checkoutSession.cleanup();
 

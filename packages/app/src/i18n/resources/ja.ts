@@ -589,6 +589,7 @@ export const ja: TranslationResources = {
         workspaceSetup: "ワークスペースセットアップ",
         terminal: "ターミナル",
         browser: "ブラウザ",
+        simulator: "シミュレータ",
         agent: "エージェント",
         workspace: "ワークスペース",
       },
@@ -1830,6 +1831,20 @@ export const ja: TranslationResources = {
       emptyTitle: "プルリクエストはまだありません",
       emptyDescription:
         "このチェックアウトのプルリクエストを作成すると、ここに詳細が表示されます。",
+    },
+    simulator: {
+      label: "シミュレータ",
+      subtitle: "iOSシミュレータ",
+      tooltip: "iOSシミュレータを表示",
+      unsupported: "iOSシミュレータを表示するにはMac上のデーモンを更新してください。",
+      noBootedDevices: "起動中のシミュレータがありません",
+      refresh: "シミュレータを更新",
+      home: "ホームボタン",
+      rotate: "回転",
+      connecting: "シミュレータに接続中…",
+      pickDevice: "起動中のシミュレータを選択してください",
+      typePlaceholder: "テキストを入力してEnter",
+      send: "送信",
     },
     diff: {
       changesLabel: "変更",

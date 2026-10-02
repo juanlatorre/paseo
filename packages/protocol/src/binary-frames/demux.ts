@@ -4,6 +4,11 @@ import {
   type FileTransferFrame,
 } from "./file-transfer.js";
 import {
+  decodeSimulatorStreamFrame,
+  SimulatorStreamOpcode,
+  type SimulatorStreamFrame,
+} from "./simulator.js";
+import {
   decodeTerminalStreamFrame,
   TerminalStreamOpcode,
   type TerminalStreamFrame,
@@ -11,7 +16,8 @@ import {
 
 export type BinaryFrame =
   | { kind: "terminal"; frame: TerminalStreamFrame }
-  | { kind: "file_transfer"; frame: FileTransferFrame };
+  | { kind: "file_transfer"; frame: FileTransferFrame }
+  | { kind: "simulator"; frame: SimulatorStreamFrame };
 
 export function decodeBinaryFrame(bytes: Uint8Array): BinaryFrame | null {
   switch (bytes[0]) {
@@ -28,6 +34,10 @@ export function decodeBinaryFrame(bytes: Uint8Array): BinaryFrame | null {
     case FileTransferOpcode.FileEnd: {
       const frame = decodeFileTransferFrame(bytes);
       return frame ? { kind: "file_transfer", frame } : null;
+    }
+    case SimulatorStreamOpcode.Frame: {
+      const frame = decodeSimulatorStreamFrame(bytes);
+      return frame ? { kind: "simulator", frame } : null;
     }
     default:
       return null;

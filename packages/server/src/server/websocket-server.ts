@@ -8,6 +8,7 @@ import type { AgentManager, AgentMetricsSnapshot } from "./agent/agent-manager.j
 import type { AgentStorage } from "./agent/agent-storage.js";
 import type { DownloadTokenStore } from "./file-download/token-store.js";
 import type { TerminalManager } from "../terminal/terminal-manager.js";
+import type { SimulatorStreamBroker } from "../simulator/simulator-stream-broker.js";
 import type pino from "pino";
 import type { ProjectRegistry, WorkspaceRegistry } from "./workspace-registry.js";
 import type { ProjectUpdate } from "./workspace-reconciliation-service.js";
@@ -549,6 +550,7 @@ export class VoiceAssistantWebSocketServer {
   private readonly projectRegistry: ProjectRegistry;
   private readonly workspaceRegistry: WorkspaceRegistry;
   private readonly workspaceLabelService: WorkspaceLabelService | null;
+  private readonly simulatorBroker: SimulatorStreamBroker | null;
   private readonly scheduleService: ScheduleService;
   private readonly checkoutDiffManager: CheckoutDiffManager;
   private readonly github: ForgeService;
@@ -648,6 +650,7 @@ export class VoiceAssistantWebSocketServer {
     pluginRuntime?: SessionOptions["pluginRuntime"],
     orchestrationSkills?: SessionOptions["orchestrationSkills"],
     workspaceLabelService?: WorkspaceLabelService,
+    simulatorBroker?: SimulatorStreamBroker | null,
   ) {
     this.logger = logger.child({ module: "websocket-server" });
     this.workspaceSetupRuntime = workspaceSetupRuntime;
@@ -669,6 +672,7 @@ export class VoiceAssistantWebSocketServer {
     this.projectRegistry = projectRegistry ?? createNoopProjectRegistry();
     this.workspaceRegistry = workspaceRegistry ?? createNoopWorkspaceRegistry();
     this.workspaceLabelService = workspaceLabelService ?? null;
+    this.simulatorBroker = simulatorBroker ?? null;
     const requiredServices = requireWebSocketServices({
       scheduleService,
       checkoutDiffManager,
@@ -1426,6 +1430,7 @@ export class VoiceAssistantWebSocketServer {
       sttLanguage: this.speech?.resolveSttLanguage() ?? "en",
       tts: () => this.speech?.resolveTts() ?? null,
       terminalManager: this.terminalManager,
+      simulatorBroker: this.simulatorBroker,
       providerSnapshotManager: this.providerSnapshotManager,
       providerUsageService: this.providerUsageService,
       hubExecutionAgents: options.hubExecutionAgents,
@@ -1682,6 +1687,10 @@ export class VoiceAssistantWebSocketServer {
         "terminal-input-mode-replay": true,
         // COMPAT(terminalSizeOwnership): added in v0.2.6, remove gate after 2027-02-02.
         "terminal-size-ownership": true,
+        // COMPAT(iosSimulator): added in v0.7.x, remove gate after 2027-04-01.
+        // Advertised only when the serve-sim helper is present; a daemon without
+        // it rejects every simulator.* RPC.
+        ...(this.simulatorBroker ? { iosSimulator: true } : {}),
         // COMPAT(rewind): added in v0.1.X, drop the gate when floor >= v0.1.X.
         rewind: true,
         // COMPAT(agentTimelinePromptIndex): added in v0.2.X, drop the gate when floor >= v0.2.X.

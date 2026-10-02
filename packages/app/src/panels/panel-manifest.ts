@@ -58,6 +58,11 @@ const manifests = {
     supportedHosts: ["main", "explorer"],
     resourceKey: () => "pull_request",
   },
+  simulator: {
+    kind: "simulator",
+    supportedHosts: ["main", "explorer"],
+    resourceKey: () => "simulator",
+  },
   file: {
     kind: "file",
     supportedHosts: ["main", "explorer"],

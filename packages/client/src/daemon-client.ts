@@ -93,6 +93,10 @@ import type {
   CreateTerminalResponse,
   SubscribeTerminalResponse,
   SubscribeTerminalRequest,
+  SimulatorDeviceListResponse,
+  SimulatorInputAction,
+  SimulatorInputSendResponse,
+  SimulatorStreamStartResponse,
   CloseItemsResponse,
   KillTerminalResponse,
   CaptureTerminalResponse,
@@ -131,6 +135,7 @@ import {
   asUint8Array,
   decodeFileTransferFrame,
   encodeFileTransferFrame,
+  decodeSimulatorStreamFrame,
   decodeTerminalStreamFrame,
   FileTransferOpcode,
   TerminalStreamOpcode,
@@ -154,6 +159,7 @@ import {
   normalizeProvidersSnapshotPayload,
 } from "./compat/normalize-provider-models.js";
 import { TerminalStreamRouter, type TerminalStreamEvent } from "./terminal-stream-router.js";
+import { SimulatorStreamRouter, type SimulatorStreamEvent } from "./simulator-stream-router.js";
 import type {
   BrowserAutomationExecuteRequest,
   BrowserAutomationExecuteResponse,
@@ -1096,6 +1102,7 @@ export class DaemonClient {
     { cwd: string; path: string; onUpdate: (version: FileVersion) => void }
   >();
   private readonly terminalStreams = new TerminalStreamRouter();
+  private readonly simulatorStreams = new SimulatorStreamRouter();
   private pendingBinaryFileReads = new Map<string, PendingBinaryFileRead>();
   private activeBinaryFileTransfers = new Map<string, BinaryFileTransferState>();
   private completedBinaryFileReads = new Map<string, FileReadResult>();
@@ -1375,6 +1382,7 @@ export class DaemonClient {
     this.rejectPendingSendQueue(new Error("Daemon client closed"));
     this.rejectPingProbe(new Error("Daemon client closed"));
     this.terminalStreams.clearSlots();
+    this.simulatorStreams.clearSlots();
     this.fileSubscriptions.clear();
     this.lastServerInfoMessage = null;
     if (this.runtimeMetricsInterval) {
@@ -5399,6 +5407,72 @@ export class DaemonClient {
     });
   }
 
+  onSimulatorFrame(handler: (event: SimulatorStreamEvent) => void): () => void {
+    return this.simulatorStreams.onEvent(handler);
+  }
+
+  async listSimulatorDevices(requestId?: string): Promise<SimulatorDeviceListResponse["payload"]> {
+    const resolvedRequestId = this.createRequestId(requestId);
+    const message = SessionInboundMessageSchema.parse({
+      type: "simulator.device.list.request",
+      requestId: resolvedRequestId,
+    });
+    return this.sendCorrelatedRequest({
+      requestId: resolvedRequestId,
+      message,
+      responseType: "simulator.device.list.response",
+    });
+  }
+
+  async startSimulatorStream(
+    deviceId: string,
+    requestId?: string,
+  ): Promise<SimulatorStreamStartResponse["payload"]> {
+    const resolvedRequestId = this.createRequestId(requestId);
+    const message = SessionInboundMessageSchema.parse({
+      type: "simulator.stream.start.request",
+      deviceId,
+      requestId: resolvedRequestId,
+    });
+    const payload = await this.sendCorrelatedRequest({
+      requestId: resolvedRequestId,
+      message,
+      responseType: "simulator.stream.start.response",
+    });
+    if (payload.error === null && typeof payload.slot === "number") {
+      this.simulatorStreams.setSlot(deviceId, payload.slot);
+    }
+    return payload;
+  }
+
+  stopSimulatorStream(deviceId: string): void {
+    this.simulatorStreams.removeDevice(deviceId);
+    this.sendSessionMessage({
+      type: "simulator.stream.stop.request",
+      deviceId,
+      requestId: this.createRequestId(),
+    });
+  }
+
+  async sendSimulatorInput(
+    deviceId: string,
+    action: SimulatorInputAction,
+    requestId?: string,
+  ): Promise<SimulatorInputSendResponse["payload"]> {
+    const resolvedRequestId = this.createRequestId(requestId);
+    const message = SessionInboundMessageSchema.parse({
+      type: "simulator.input.send.request",
+      deviceId,
+      action,
+      requestId: resolvedRequestId,
+    });
+    return this.sendCorrelatedRequest({
+      requestId: resolvedRequestId,
+      message,
+      responseType: "simulator.input.send.response",
+    });
+  }
+
   sendTerminalInput(terminalId: string, message: TerminalInput["message"]): void {
     const frame = this.terminalStreams.encodeInput(terminalId, message);
     if (frame) {
@@ -5822,6 +5896,19 @@ export class DaemonClient {
       return true;
     }
 
+    const simulatorFrame = decodeSimulatorStreamFrame(rawBytes);
+    if (simulatorFrame) {
+      this.traceInstant("paseo.ws.message.inbound", {
+        envelopeType: "binary",
+        messageType: "simulator",
+        opcode: String(simulatorFrame.opcode),
+      });
+      this.consecutiveLivenessFailures = 0;
+      const routed = this.simulatorStreams.handleFrame(simulatorFrame);
+      this.runtimeMetrics?.recordBinaryFrame("other", rawBytes.byteLength, 0);
+      return routed;
+    }
+
     const frame = decodeTerminalStreamFrame(rawBytes);
     if (!frame) {
       return false;
@@ -5985,6 +6072,7 @@ export class DaemonClient {
     this.rejectPendingSendQueue(new Error(reason ?? "Connection lost"));
     this.rejectPingProbe(new Error(reason ?? "Connection lost"));
     this.terminalStreams.clearSlots();
+    this.simulatorStreams.clearSlots();
     this.lastServerInfoMessage = null;
 
     if (wasDisposed) {

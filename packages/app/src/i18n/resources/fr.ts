@@ -589,6 +589,7 @@ export const fr: TranslationResources = {
         workspaceSetup: "ConfigurationWorkspace",
         terminal: "Terminal",
         browser: "Navigateur",
+        simulator: "Simulateur",
         agent: "Agent",
         workspace: "Workspace",
       },
@@ -1863,6 +1864,20 @@ export const fr: TranslationResources = {
       emptyTitle: "Aucune demande de fusion pour le moment",
       emptyDescription:
         "Créez une demande de fusion pour cette copie de travail afin d’afficher ses détails ici.",
+    },
+    simulator: {
+      label: "Simulateur",
+      subtitle: "Simulateur iOS",
+      tooltip: "Diffuser le simulateur iOS en direct",
+      unsupported: "Mettez à jour le daemon sur votre Mac pour afficher le simulateur iOS.",
+      noBootedDevices: "Aucun simulateur démarré",
+      refresh: "Actualiser les simulateurs",
+      home: "Bouton d'accueil",
+      rotate: "Pivoter",
+      connecting: "Connexion au simulateur…",
+      pickDevice: "Sélectionnez un simulateur démarré",
+      typePlaceholder: "Saisissez du texte et appuyez sur Entrée",
+      send: "Envoyer",
     },
     diff: {
       changesLabel: "Modifications",
